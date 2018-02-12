@@ -61,7 +61,7 @@ MAX_PAGE_LIMIT = 1000
 #              Categories
 ###############################################
 
-@api_v3_blueprint.route('/categories', methods=['GET'])
+@api_v3_blueprint.route('/categories/', methods=['GET'])
 # @basic_auth_user
 # @api_require_user
 def v3_api_categories():
@@ -129,6 +129,83 @@ def v3_api_categories():
     # ]
 
     return flask.jsonify(categories), 200
+
+##############################################
+#              Torrent Info
+###############################################
+
+@api_v3_blueprint.route('/info/<id>/', methods=['GET'])
+# @basic_auth_user
+# @api_require_user
+def v3_api_torrent_info(id):
+
+    """
+    Used to fetch information about a torrent
+
+    :param id: ID of the torrent whose information is required
+    :return: found information as JSON
+
+    see sample_torrent_info.json
+
+    TODO: match by torrent_hash
+    TODO: improve error messages
+    """
+
+    id_match = re.match(ID_PATTERN, id)
+    if not id_match:
+        return error('Torrent id was not a valid id.')
+
+    torrent = models.Torrent.by_id(id)
+    if not torrent:
+        return error('Query was not a valid id or hash.')
+
+    viewer = flask.g.user
+
+    # Only allow admins see deleted torrents
+    if torrent.deleted and not (viewer and viewer.is_superadmin):
+        return error('Query was not a valid id or hash.')
+
+    submitter = None
+    if not torrent.anonymous and torrent.user:
+        # a user submitted the torrent, and chose not to be anonymous
+        submitter = torrent.user.username
+    if torrent.user and (viewer == torrent.user or viewer.is_moderator):
+        # a user submitted the torrent,
+        # and either he himself or a moderator is trying to view this torrent
+        submitter = torrent.user.username
+
+    # Create a response dict with relevant data
+    torrent_metadata = {
+        'submitter': submitter,
+        'url': flask.url_for('torrents.view', torrent_id=torrent.id, _external=True),
+        'id': torrent.id,
+        'name': torrent.display_name,
+
+        'creation_date': torrent.created_time.strftime('%Y-%m-%d %H:%M UTC'),
+        'hash_b32': torrent.info_hash_as_b32,  # as used in magnet uri
+        'hash_hex': torrent.info_hash_as_hex,  # .hex(), #as shown in torrent client
+        'magnet': torrent.magnet_uri,
+
+        'main_category': torrent.main_category.name,
+        'main_category_id': torrent.main_category.id,
+        'sub_category': torrent.sub_category.name,
+        'sub_category_id': torrent.sub_category.id,
+
+        'information': torrent.information,
+        'description': torrent.description,
+        'stats': {
+            'seeders': torrent.stats.seed_count,
+            'leechers': torrent.stats.leech_count,
+            'downloads': torrent.stats.download_count
+        },
+        'filesize': torrent.filesize,
+
+        'is_trusted': torrent.trusted,
+        'is_complete': torrent.complete,
+        'is_remake': torrent.remake
+    }
+
+    return flask.jsonify(torrent_metadata), 200
 
 ##############################################
 #              Torrent Comments
