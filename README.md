@@ -1,3 +1,19 @@
+
+This is a fork of original nyaa development repository.
+
+I intend to develop an API for nyaa and my own use. I am just a starter in Python. So, while I create code, I am bound
+to make thousands of mistakes. Please guide me. I hope this will be useful for nyaa in future.
+
+Files I am working on (or the ones I have changed) are:
+
+    /nyaa/__init__.py
+    /nyaa/api/__init__.py
+    /nyaa/api/nyaa_api.py
+
+#kirusurai
+
+---------------------
+
 # NyaaV2 [![Build Status](https://travis-ci.org/nyaadevs/nyaa.svg?branch=master)](https://travis-ci.org/nyaadevs/nyaa)
 
 ## Setting up for development
