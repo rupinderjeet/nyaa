@@ -1,0 +1,29 @@
+[
+    {
+        "id": 1,
+        "id_as_string": "1_0",
+        "name": "Anime",
+        "sub_categories": [
+            {
+                "id": 1,
+                "id_as_string": "1_1",
+                "name": "Anime Music Video"
+            },
+            {
+                "id": 2,
+                "id_as_string": "1_2",
+                "name": "English-translated"
+            },
+            {
+                "id": 3,
+                "id_as_string": "1_3",
+                "name": "Non-English-translated"
+            },
+            {
+                "id": 4,
+                "id_as_string": "1_4",
+                "name": "Raw"
+            }
+        ]
+    }
+]
