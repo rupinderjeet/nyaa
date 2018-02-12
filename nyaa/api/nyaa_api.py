@@ -1,6 +1,8 @@
 import functools
+import re
 
 import flask
+from sqlalchemy import desc
 
 from nyaa import models
 
@@ -47,6 +49,12 @@ def error(message, status_code=400):
     return flask.jsonify({'errors': [message]}), status_code
 
 ###################### API ROUTES ########################
+
+ID_PATTERN = '^[0-9]+$'
+PAGE_NUMBER_PATTERN = '^[0-9]+$'
+INFO_HASH_PATTERN = '^[0-9a-fA-F]{40}$'  # INFO_HASH as string
+
+MAX_PAGE_LIMIT = 1000
 
 ##############################################
 #              Categories
@@ -120,3 +128,80 @@ def v3_api_categories():
     # ]
 
     return flask.jsonify(categories), 200
+
+##############################################
+#              Torrent Comments
+###############################################
+
+COMMENTS_PER_PAGE = 3
+@api_v3_blueprint.route('/info/<id>/comments/', methods=['GET'])
+@api_v3_blueprint.route('/info/<id>/comments/<page>', methods=['GET'])
+# @basic_auth_user
+# @api_require_user
+def v3_api_torrent_comments(id, page=-1):
+
+    """
+    Used to fetch comments on a torrent
+
+    comments/     : returns all data at once (same as comments/0)
+    comments/page : returns data from mentioned page number
+
+    :param id: ID of the torrent for which you want to get comments
+    :param page: (optional) Page number of the comment list
+    :return: found comments as JSON
+
+    see sample_comments.json
+    """
+
+    id_match = re.match(ID_PATTERN, id)
+    if not id_match:
+        return error('Torrent id was not a valid id.')
+
+    # check if this torrent is deleted
+    viewer = flask.g.user
+    torrent = models.Torrent.by_id(id)
+    if (torrent and torrent.deleted) and not (viewer and viewer.is_superadmin):
+        # this torrent is deleted and viewer is not an admin
+        return error('Query was not a valid id or hash.')
+
+    if page == -1:
+        page = None
+    else:
+        page_match = re.match(PAGE_NUMBER_PATTERN, str(page))
+        if page_match:
+            page = int(page)
+
+            # (page < 0) check is performed by regex pattern already
+            if page > MAX_PAGE_LIMIT:
+                return error('Maximum pagination limit reached.')
+
+        else:
+            return error('Page Number was not a valid integer.')
+
+    comments_result = models.Comment.query\
+        .filter_by(torrent_id=id)\
+        .order_by(desc(models.Comment.id))
+
+    if page:
+        comments_result = comments_result.paginate(page, COMMENTS_PER_PAGE, error_out=False).items
+
+    if not comments_result:
+        return error('No data found')
+
+    comments = [
+        {
+            'id': comment.id,
+
+            # I think this statement is heavy on performance
+            'user': {
+                'id': comment.user_id,
+                'name': models.User.by_id(comment.user_id).username
+            },
+
+            'text': comment.text,
+            'created_time': comment.created_time,
+            'edited_time': comment.edited_time
+        } for comment in comments_result
+    ]
+
+    return flask.jsonify(comments), 200
