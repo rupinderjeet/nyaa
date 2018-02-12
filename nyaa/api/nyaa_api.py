@@ -6,6 +6,8 @@ import flask
 from sqlalchemy import desc
 
 from nyaa import models
+from nyaa.search import DEFAULT_PER_PAGE, search_db
+from nyaa.utils import chain_get
 
 app = flask.current_app
 api_v3_blueprint = flask.Blueprint('api-v3', __name__, url_prefix='/api/v3')
@@ -129,6 +131,137 @@ def v3_api_categories():
     # ]
 
     return flask.jsonify(categories), 200
+
+
+##############################################
+#              Browse Torrents
+###############################################
+
+TORRENTS_PER_PAGE = 40
+
+@api_v3_blueprint.route('/browse/', methods=['GET'])
+# @basic_auth_user
+# @api_require_user
+def v3_api_browse():
+
+    """
+    Used to browse and search torrents
+
+    - 'page=rss' argument is not allowed
+
+    :param:optional argument: q = your search keyword
+    :param:optional argument: f = filter selection
+    :param:optional argument: c = category selection
+    :param:optional argument: p = page number
+    :param:optional argument: s = sort key
+    :param:optional argument: o = sort order
+    :param:optional argument: u = limit search to torrents uploaded by specific user
+
+    :return: a collection of found torrents and a list of applied arguments as JSON
+
+    see sample_browse_torrents.json
+
+    TODO: add show__ arguments to reduce json
+    """
+
+    req_args = flask.request.args
+    if req_args.get('page') == 'rss':
+        return error('RSS is not allowed from this API.')
+
+    search_term = chain_get(req_args, 'q')
+    quality_filter = chain_get(req_args, 'f')
+    category = chain_get(req_args, 'c')
+
+    # Page Number
+    page_number = chain_get(req_args, 'p')
+    try:
+        page_number = max(1, int(page_number))
+    except (ValueError, TypeError):
+        page_number = 1
+
+    # Sorting
+    sort_key = chain_get(req_args, 's', 'sort_by')
+    sort_order = chain_get(req_args, 'o', 'sort_order')
+
+    user_name = req_args.get('u')
+
+    # Check simply if the key exists
+    use_magnet_links = 'magnets' in req_args or 'm' in req_args
+
+    results_per_page = app.config.get('RESULTS_PER_PAGE', DEFAULT_PER_PAGE)
+
+    user_id = None
+    if user_name:
+        user = models.User.by_username(user_name)
+        if not user:
+            flask.abort(404)
+        user_id = user.id
+
+    query_args = {
+        'user': user_id,
+        'sort': sort_key or 'id',
+        'order': sort_order or 'desc',
+        'category': category or '0_0',
+        'quality_filter': quality_filter or '0',
+        'page': page_number,
+        'per_page': results_per_page
+    }
+
+    """
+    # not needed I think (for now)
+
+    if flask.g.user:
+        query_args['logged_in_user'] = flask.g.user
+        if flask.g.user.is_moderator:  # God mode
+            query_args['admin'] = True
+    """
+
+    query = search_db(**query_args)
+    # change p= argument to whatever you change page_parameter to or pagination breaks
+
+    torrents = []
+    if query.items:
+
+        for torrent in query.items:
+
+            if torrent:
+                torrent_metadata = {
+                    'url': flask.url_for('torrents.view', torrent_id=torrent.id, _external=True),
+                    'id': torrent.id,
+                    'name': torrent.display_name,
+
+                    'creation_date': torrent.created_time.strftime('%Y-%m-%d %H:%M UTC'),
+                    'hash_b32': torrent.info_hash_as_b32,  # as used in magnet uri
+                    'hash_hex': torrent.info_hash_as_hex,  # .hex(), #as shown in torrent client
+                    'magnet': torrent.magnet_uri,
+
+                    'main_category': torrent.main_category.name,
+                    'main_category_id': torrent.main_category.id,
+                    'sub_category': torrent.sub_category.name,
+                    'sub_category_id': torrent.sub_category.id,
+
+                    'information': torrent.information,
+                    'description': torrent.description,
+                    'stats': {
+                        'seeders': torrent.stats.seed_count,
+                        'leechers': torrent.stats.leech_count,
+                        'downloads': torrent.stats.download_count
+                    },
+                    'filesize': torrent.filesize,
+
+                    'is_trusted': torrent.trusted,
+                    'is_complete': torrent.complete,
+                    'is_remake': torrent.remake
+                }
+
+                torrents.append(torrent_metadata)
+
+    result = {
+        'torrents': torrents,
+        'args': query_args
+    }
+
+    return flask.jsonify(result), 200
 
 ##############################################
 #              Torrent Info

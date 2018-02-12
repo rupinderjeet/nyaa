@@ -1,0 +1,61 @@
+{
+    "args": {
+        "category": "0_0",
+        "order": "desc",
+        "page": 1,
+        "per_page": 2,
+        "quality_filter": "0",
+        "sort": "id",
+        "user": null
+    },
+    "torrents": [
+        {
+            "creation_date": "2018-02-02 19:38 UTC",
+            "description": "",
+            "filesize": 95096159,
+            "hash_b32": "3XI2XQTQ24GDGAUWDZJBZNZG4IIWMTEO",
+            "hash_hex": "ddd1abc270d70c3302961e521cb726e211664c8e",
+            "id": 7,
+            "information": "",
+            "is_complete": false,
+            "is_remake": false,
+            "is_trusted": false,
+            "magnet": "magnet:?xt=urn:btih:3XI2XQTQ24GDGAUWDZJBZNZG4IIWMTEO&dn=Banished-OST&tr=http%3A%2F%2F127.0.0.1%3A6881%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce",
+            "main_category": "Audio",
+            "main_category_id": 2,
+            "name": "Banished-OST",
+            "stats": {
+                "downloads": 0,
+                "leechers": 0,
+                "seeders": 0
+            },
+            "sub_category": "Lossy",
+            "sub_category_id": 2,
+            "url": "http://127.0.0.1:5500/view/7"
+        },
+        {
+            "creation_date": "2018-02-02 19:37 UTC",
+            "description": "",
+            "filesize": 48546593,
+            "hash_b32": "5KIW6LTCB6BYM4OXCKNMOXSVTZ5IYGSS",
+            "hash_hex": "ea916f2e620f838671d7129ac75e559e7a8c1a52",
+            "id": 6,
+            "information": "",
+            "is_complete": false,
+            "is_remake": false,
+            "is_trusted": false,
+            "magnet": "magnet:?xt=urn:btih:5KIW6LTCB6BYM4OXCKNMOXSVTZ5IYGSS&dn=BackboneJS&tr=http%3A%2F%2F127.0.0.1%3A6881%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce",
+            "main_category": "Live Action",
+            "main_category_id": 4,
+            "name": "BackboneJS",
+            "stats": {
+                "downloads": 0,
+                "leechers": 0,
+                "seeders": 0
+            },
+            "sub_category": "Raw",
+            "sub_category_id": 4,
+            "url": "http://127.0.0.1:5500/view/6"
+        }
+    ]
+}
