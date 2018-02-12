@@ -1,0 +1,29 @@
+{
+    "Death Note 720p": {
+        "Chapters": {
+            "Death Note - 01 - Rebirth   [DarkDream].xml": 2245,
+            "Death Note - 02 - Confrontation   [DarkDream].xml": 2245,
+            "Death Note - 03 - Dealings   [DarkDream].xml": 2246
+        },
+        "Death Note - 01 - Rebirth   [DarkDream].mkv": 629825353,
+        "Death Note - 02 - Confrontation   [DarkDream].mkv": 629893891,
+        "Death Note - 03 - Dealings   [DarkDream].mkv": 629862835,
+        "Soundtracks": {
+            "Deathnote OST": {
+                "01 Death note.mp3": 7598260,
+                "02 Jiken.mp3": 6770688,
+                "03 Light's Theme.mp3": 8155136,
+                "04 L's Theme.mp3": 7354368,
+                "Nipponsei - DEATH NOTE Original Soundtrack.txt": 282,
+                "Scans": {
+                    "Front.jpg": 81281,
+                    "back.jpg": 58728,
+                    "inside1.jpg": 142588,
+                    "inside2.jpg": 166231,
+                    "inside3.jpg": 142654
+                },
+                "desktop.ini": 43
+            }
+        }
+    }
+}

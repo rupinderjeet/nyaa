@@ -1,4 +1,5 @@
 import functools
+import json
 import re
 
 import flask
@@ -135,7 +136,7 @@ def v3_api_categories():
 
 COMMENTS_PER_PAGE = 3
 @api_v3_blueprint.route('/info/<id>/comments/', methods=['GET'])
-@api_v3_blueprint.route('/info/<id>/comments/<page>', methods=['GET'])
+@api_v3_blueprint.route('/info/<id>/comments/<page>/', methods=['GET'])
 # @basic_auth_user
 # @api_require_user
 def v3_api_torrent_comments(id, page=-1):
@@ -205,3 +206,47 @@ def v3_api_torrent_comments(id, page=-1):
     ]
 
     return flask.jsonify(comments), 200
+
+##############################################
+#              Torrent Files
+###############################################
+
+@api_v3_blueprint.route('/info/<id>/files/', methods=['GET'])
+# @basic_auth_user
+# @api_require_user
+def v3_api_torrent_files(id):
+
+    """
+    Used to fetch list of files in a torrent
+
+    -- pagination not required (not supported too, I think)
+
+    :param id: ID of the torrent for which you want to get list of files
+    :return: found list of files in Json stacked as a folder-structure
+
+    see sample_files.json
+    """
+
+    id_match = re.match(ID_PATTERN, id)
+    if not id_match:
+        return error('Torrent id was not a valid id.')
+
+    # check if this torrent is deleted
+    viewer = flask.g.user
+    torrent = models.Torrent.by_id(id)
+    if not torrent:
+        return error('Query was not a valid id or hash.')
+
+    if torrent.deleted and not (viewer and viewer.is_superadmin):
+        # this torrent is deleted and viewer is not an admin
+        return error('Query was not a valid id or hash.')
+
+    # TODO: maybe use direct model
+    # files_result = models.TorrentFilelist.query.filter_by(torrent_id=id)
+    file_list = torrent.filelist # does the overuse cause memory/performance issues?
+    if file_list:
+
+        decoded_file_list = file_list.filelist_blob.decode('utf-8')
+        return flask.jsonify(json.loads(decoded_file_list)), 200
+    else:
+        return error('Unable to get file list for this torrent.')
