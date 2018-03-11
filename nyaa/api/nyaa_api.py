@@ -6,6 +6,8 @@ import flask
 from sqlalchemy import desc
 
 from nyaa import models
+from nyaa.api import metadata_science
+from nyaa.extensions import db
 from nyaa.search import DEFAULT_PER_PAGE, search_db
 from nyaa.utils import chain_get
 
@@ -416,6 +418,66 @@ def v3_api_torrent_comments(id, page=-1):
     ]
 
     return flask.jsonify(comments), 200
+
+
+##############################################
+#              Torrent : Add Comments
+###############################################
+
+@api_v3_blueprint.route('/info/<id>/comments/add', methods=['POST'])
+# @basic_auth_user
+# @api_require_user
+def v3_api_torrent_add_comment (id):
+
+    """
+    Used to add comment on a torrent
+
+    :param (in url) id: ID of the torrent on which you want to add comment
+    :param comment: comment text
+    :return: added comment as JSON, or bunch of errors
+
+    see sample_comments_add.json
+
+    TODO: check if comments are disabled:
+    """
+
+    id_match = re.match(ID_PATTERN, id)
+    if not id_match:
+        return error('Torrent id was not a valid id.', 404)
+
+    viewer = flask.g.user
+    # if not viewer:
+    #     return error('You are not logged in, probably.', 403)
+    #
+    # check if this torrent is deleted
+    torrent = models.Torrent.by_id(id)
+    if (torrent and torrent.deleted) and not viewer.is_superadmin:
+        # this torrent is deleted and viewer is not an admin
+        return error('Torrent does not exist.', 404)
+
+    comment_text = flask.request.form.get('comment', default="", type=str)
+    if not comment_text:
+        return error("Can't add empty comment.", 403)
+
+    comment = models.Comment(
+        torrent_id=torrent.id,
+        user_id=1, # TODO change to flask.g.user.id
+        text=comment_text
+    )
+
+    db.session.add(comment)
+    db.session.flush()
+
+    # What does this do?
+    torrent_count = torrent.update_comment_count()
+    db.session.commit()
+
+    comment_author = None
+    if comment.user_id:
+        comment_author = models.User.by_id(comment.user_id)
+
+    comment_metadata = metadata_science.get_comment_metadata(comment, comment_author)
+    return flask.jsonify(comment_metadata), 201
 
 ##############################################
 #              Torrent Files
