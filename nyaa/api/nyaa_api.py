@@ -86,7 +86,6 @@ def v3_api_categories():
     if not categories_result:
         return error('Categories not found.')
 
-    # Method 1
     categories = []
     for category in categories_result:
 
@@ -97,40 +96,11 @@ def v3_api_categories():
             for sub_category in category.sub_categories:
                 if sub_category:
                     sub_categories.append(
-                        {
-                            # 'id': sub_category.id,
-                            'name': sub_category.name,
-                            'id_as_string': sub_category.id_as_string
-                        }
+                        metadata_science.get_sub_category_metadata(sub_category)
                     )
 
-        main_category_metadata = {
-            # 'id': category.id,
-            'name': category.name,
-            'id_as_string': category.id_as_string,
-            'sub_categories': sub_categories
-        }
-
+        main_category_metadata = metadata_science.get_parent_category_metadata(category, sub_categories)
         categories.append(main_category_metadata)
-
-    # Method 2
-
-    # categories = [
-    #     {
-    #         # 'id': category.id,
-    #         'name': category.name,
-    #         'id_as_string': category.id_as_string,
-    #         'sub_categories': [
-    #             {
-    #                 # 'id': sub_category.id,
-    #                 'id_as_string': sub_category.id_as_string,
-    #                 'name': sub_category.name
-    #             } for sub_category in category.sub_categories
-    #             # TODO: how to check if category.sub_categories is None or not?
-    #         ]
-    #     } for category in categories_result
-    #     # TODO: how to check if category is None or not?
-    # ]
 
     return flask.jsonify(categories), 200
 
