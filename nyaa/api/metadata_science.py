@@ -82,17 +82,19 @@ def get_comment_metadata(comment, comment_author) :
     if not comment:
         return None
 
-    comment_author_metadata = None
+    comment_metadata = {
+        'id': comment.id,
+        'text': comment.text,
+        'created_at': comment.created_time
+    }
+
+    if comment.edited_time:
+        comment_metadata['edited_at'] = comment.edited_time
+
     if comment_author:
-        comment_author_metadata = {
+        comment_metadata['author'] = {
             'id': comment_author.id,
             'name': comment_author.username
         }
 
-    return {
-        'id': comment.id,
-        'author': comment_author_metadata,
-        'text': comment.text,
-        'created_at': comment.created_time,
-        'edited_at': comment.edited_time
-    }
+    return comment_metadata
