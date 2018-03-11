@@ -199,48 +199,10 @@ def v3_api_browse():
         for torrent in query.items:
 
             if torrent:
-                torrent_metadata = {
-                    'url': flask.url_for('torrents.view', torrent_id=torrent.id, _external=True),
-                    'id': torrent.id,
-                    'name': torrent.display_name,
-
-                    'creation_timestamp': int(torrent.created_time.timestamp()), #strftime('%Y-%m-%d %H:%M UTC'),
-                    'hash_b32': torrent.info_hash_as_b32,  # as used in magnet uri
-                    'hash_hex': torrent.info_hash_as_hex,  # .hex(), #as shown in torrent client
-                    'magnet': torrent.magnet_uri,
-
-                    'main_category': {
-                        # 'id': torrent.main_category.id,
-                        'id_as_string': torrent.main_category.id_as_string,
-                        'name': torrent.main_category.name,
-                        'sub_category': {
-                            # 'id': torrent.sub_category.id,
-                            'id_as_string': torrent.sub_category.id_as_string,
-                            'name': torrent.sub_category.name,
-                        }
-                    },
-
-                    'information': torrent.information,
-                    'description': torrent.description,
-                    'stats': {
-                        'seeders': torrent.stats.seed_count,
-                        'leechers': torrent.stats.leech_count,
-                        'downloads': torrent.stats.download_count
-                    },
-                    'filesize': torrent.filesize,
-
-                    'is_trusted': torrent.trusted,
-                    'is_complete': torrent.complete,
-                    'is_remake': torrent.remake
-                }
-
+                torrent_metadata = metadata_science.get_torrent_metadata(torrent)
                 torrents.append(torrent_metadata)
 
-    result = {
-        'torrents': torrents,
-        'args': query_args
-    }
-
+    result = metadata_science.get_torrent_list_metadata(torrents, query_args)
     return flask.jsonify(result), 200
 
 ##############################################
