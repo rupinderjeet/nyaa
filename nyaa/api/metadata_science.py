@@ -4,43 +4,28 @@
         where same model is used
 """
 
-def get_parent_category_metadata(category, sub_categories) :
+def get_category_metadata(category, sub_categories=None) :
 
     if not category:
         return None
 
-    return {
+    category_metadata = {
         # 'id': category.id,
         'name': category.name,
         'id_as_string': category.id_as_string,
-        'sub_categories': sub_categories
     }
 
-def get_sub_category_metadata(sub_category) :
+    if sub_categories:
+        category_metadata['sub_categories']= sub_categories
 
-    if not sub_category:
-        return None
+    return category_metadata
 
-    return {
-        # 'id': category.id,
-        'name': sub_category.name,
-        'id_as_string': sub_category.id_as_string,
-    }
-
-def get_torrent_metadata(torrent) :
+def get_torrent_metadata(torrent, submitter, category_as_model=False) :
 
     if not torrent:
         return None
 
-    torrent_stats = None
-    if torrent.stats:
-        torrent_stats = {
-            'seeders': torrent.stats.seed_count,
-            'leechers': torrent.stats.leech_count,
-            'downloads': torrent.stats.download_count
-        }
-
-    return {
+    torrent_metadata = {
         'id': torrent.id,
         'name': torrent.display_name,
 
@@ -48,22 +33,42 @@ def get_torrent_metadata(torrent) :
         'hash_b32': torrent.info_hash_as_b32,  # as used in magnet uri
         'hash_hex': torrent.info_hash_as_hex,  # .hex(), #as shown in torrent client
 
-        'url': '', # TODO download url, later
+        'url': '',  # TODO download url, later
         'magnet': torrent.magnet_uri,
-
-        'main_category': get_parent_category_metadata(
-            torrent.main_category, [get_sub_category_metadata(torrent.sub_category)]
-        ),
 
         'information': torrent.information,
         'description': torrent.description,
-        'stats': torrent_stats,
         'filesize': torrent.filesize,
 
         'is_trusted': torrent.trusted,
         'is_complete': torrent.complete,
         'is_remake': torrent.remake
     }
+
+    if submitter:
+        torrent_metadata['submitter'] = {
+            'id': submitter.id,
+            'name': submitter.name
+        }
+
+    if category_as_model:
+        torrent_metadata['main_category'] = get_category_metadata(
+            torrent.main_category, [get_category_metadata(torrent.sub_category)]
+        )
+    else:
+        torrent_metadata['main_category'] = torrent.main_category.name
+        torrent_metadata['main_category_id'] = torrent.main_category.id
+        torrent_metadata['sub_category'] = torrent.sub_category.name
+        torrent_metadata['sub_category_id'] = torrent.sub_category.id
+
+    if torrent.stats:
+        torrent_metadata['stats'] = {
+            'seeders': torrent.stats.seed_count,
+            'leechers': torrent.stats.leech_count,
+            'downloads': torrent.stats.download_count
+        }
+
+    return torrent_metadata
 
 def get_torrent_list_metadata(torrents, args) :
 

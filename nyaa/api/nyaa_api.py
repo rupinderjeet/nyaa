@@ -96,10 +96,10 @@ def v3_api_categories():
             for sub_category in category.sub_categories:
                 if sub_category:
                     sub_categories.append(
-                        metadata_science.get_sub_category_metadata(sub_category)
+                        metadata_science.get_category_metadata(sub_category)
                     )
 
-        main_category_metadata = metadata_science.get_parent_category_metadata(category, sub_categories)
+        main_category_metadata = metadata_science.get_category_metadata(category, sub_categories)
         categories.append(main_category_metadata)
 
     return flask.jsonify(categories), 200
@@ -190,6 +190,7 @@ def v3_api_browse():
             query_args['admin'] = True
     """
 
+    # TODO : use as legacy_fallback | shift to ES
     query = search_db(**query_args)
     # change p= argument to whatever you change page_parameter to or pagination breaks
 
@@ -218,6 +219,7 @@ def v3_api_torrent_info(id):
     Used to fetch information about a torrent
 
     :param id: ID of the torrent whose information is required
+    :param category_as_model: should return category as model or plain_data, default false
     :return: found information as JSON
 
     see sample_torrent_info.json
@@ -225,6 +227,9 @@ def v3_api_torrent_info(id):
     TODO: match by torrent_hash
     TODO: improve error messages
     """
+
+    # enable if has any value assigned to it, lazy for bool-cast
+    category_as_model = flask.request.args.get('category_as_model')
 
     id_match = re.match(ID_PATTERN, id)
     if not id_match:
@@ -243,15 +248,14 @@ def v3_api_torrent_info(id):
     submitter = None
     if not torrent.anonymous and torrent.user:
         # a user submitted the torrent, and chose not to be anonymous
-        submitter = torrent.user.username
+        submitter = torrent.user
     if torrent.user and (viewer == torrent.user or viewer.is_moderator):
         # a user submitted the torrent,
         # and either he himself or a moderator is trying to view this torrent
-        submitter = torrent.user.username
+        submitter = torrent.user
 
     # Create a response dict with relevant data
-    # TODO add submitter
-    torrent_metadata = metadata_science.get_torrent_metadata(torrent)
+    torrent_metadata = metadata_science.get_torrent_metadata(torrent, submitter, category_as_model)
     return flask.jsonify(torrent_metadata), 200
 
 ##############################################
