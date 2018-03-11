@@ -93,19 +93,19 @@ def v3_api_categories():
         sub_categories = []
 
         if category and category.sub_categories:
-            for sub_category in category.sub_categories:
 
+            for sub_category in category.sub_categories:
                 if sub_category:
                     sub_categories.append(
                         {
-                            'id': sub_category.id,
+                            # 'id': sub_category.id,
                             'name': sub_category.name,
                             'id_as_string': sub_category.id_as_string
                         }
                     )
 
         main_category_metadata = {
-            'id': category.id,
+            # 'id': category.id,
             'name': category.name,
             'id_as_string': category.id_as_string,
             'sub_categories': sub_categories
@@ -117,12 +117,12 @@ def v3_api_categories():
 
     # categories = [
     #     {
-    #         'id': category.id,
+    #         # 'id': category.id,
     #         'name': category.name,
     #         'id_as_string': category.id_as_string,
     #         'sub_categories': [
     #             {
-    #                 'id': sub_category.id,
+    #                 # 'id': sub_category.id,
     #                 'id_as_string': sub_category.id_as_string,
     #                 'name': sub_category.name
     #             } for sub_category in category.sub_categories
@@ -185,6 +185,7 @@ def v3_api_browse():
     sort_key = chain_get(req_args, 's', 'sort_by')
     sort_order = chain_get(req_args, 'o', 'sort_order')
 
+    # torrents by a user
     user_name = req_args.get('u')
 
     # Check simply if the key exists
@@ -200,6 +201,7 @@ def v3_api_browse():
         user_id = user.id
 
     query_args = {
+        'term': search_term or '',
         'user': user_id,
         'sort': sort_key or 'id',
         'order': sort_order or 'desc',
@@ -232,15 +234,21 @@ def v3_api_browse():
                     'id': torrent.id,
                     'name': torrent.display_name,
 
-                    'creation_date': torrent.created_time.strftime('%Y-%m-%d %H:%M UTC'),
+                    'creation_timestamp': int(torrent.created_time.timestamp()), #strftime('%Y-%m-%d %H:%M UTC'),
                     'hash_b32': torrent.info_hash_as_b32,  # as used in magnet uri
                     'hash_hex': torrent.info_hash_as_hex,  # .hex(), #as shown in torrent client
                     'magnet': torrent.magnet_uri,
 
-                    'main_category': torrent.main_category.name,
-                    'main_category_id': torrent.main_category.id,
-                    'sub_category': torrent.sub_category.name,
-                    'sub_category_id': torrent.sub_category.id,
+                    'main_category': {
+                        # 'id': torrent.main_category.id,
+                        'id_as_string': torrent.main_category.id_as_string,
+                        'name': torrent.main_category.name,
+                        'sub_category': {
+                            # 'id': torrent.sub_category.id,
+                            'id_as_string': torrent.sub_category.id_as_string,
+                            'name': torrent.sub_category.name,
+                        }
+                    },
 
                     'information': torrent.information,
                     'description': torrent.description,
@@ -401,21 +409,19 @@ def v3_api_torrent_comments(id, page=-1):
     if not comments_result:
         return error('No data found')
 
-    comments = [
-        {
-            'id': comment.id,
+    comments = []
+    if comments_result:
 
-            # I think this statement is heavy on performance
-            'user': {
-                'id': comment.user_id,
-                'name': models.User.by_id(comment.user_id).username
-            },
+        for comment in comments_result:
+            if comment:
 
-            'text': comment.text,
-            'created_time': comment.created_time,
-            'edited_time': comment.edited_time
-        } for comment in comments_result
-    ]
+                # I think this statement is heavy on performance
+                comment_author = None
+                if comment.user_id:
+                    comment_author = models.User.by_id(comment.user_id)
+
+                comment_metadata = metadata_science.get_comment_metadata(comment, comment_author)
+                comments.append(comment_metadata)
 
     return flask.jsonify(comments), 200
 
