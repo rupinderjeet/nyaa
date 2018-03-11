@@ -6,11 +6,12 @@
         "per_page": 2,
         "quality_filter": "0",
         "sort": "id",
+        "term": "",
         "user": null
     },
     "torrents": [
         {
-            "creation_date": "2018-02-02 19:38 UTC",
+            "created_at": "Fri, 02 Feb 2018 19:38:09 GMT",
             "description": "",
             "filesize": 95096159,
             "hash_b32": "3XI2XQTQ24GDGAUWDZJBZNZG4IIWMTEO",
@@ -31,10 +32,10 @@
             },
             "sub_category": "Lossy",
             "sub_category_id": 2,
-            "url": "http://127.0.0.1:5500/view/7"
+            "url": ""
         },
         {
-            "creation_date": "2018-02-02 19:37 UTC",
+            "created_at": "Fri, 02 Feb 2018 19:37:54 GMT",
             "description": "",
             "filesize": 48546593,
             "hash_b32": "5KIW6LTCB6BYM4OXCKNMOXSVTZ5IYGSS",
@@ -55,7 +56,7 @@
             },
             "sub_category": "Raw",
             "sub_category_id": 4,
-            "url": "http://127.0.0.1:5500/view/6"
+            "url": ""
         }
     ]
 }

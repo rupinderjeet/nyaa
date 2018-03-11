@@ -20,7 +20,7 @@ def get_category_metadata(category, sub_categories=None) :
 
     return category_metadata
 
-def get_torrent_metadata(torrent, submitter, category_as_model=False) :
+def get_torrent_metadata(torrent, submitter=None, category_as_model=False) :
 
     if not torrent:
         return None
