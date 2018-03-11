@@ -13,7 +13,7 @@ def get_parent_category_metadata(category, sub_categories) :
         # 'id': category.id,
         'name': category.name,
         'id_as_string': category.id_as_string,
-        'sub_categories': [sub_categories]
+        'sub_categories': sub_categories
     }
 
 def get_sub_category_metadata(sub_category) :
@@ -52,19 +52,8 @@ def get_torrent_metadata(torrent) :
         'magnet': torrent.magnet_uri,
 
         'main_category': get_parent_category_metadata(
-            torrent.main_category, get_sub_category_metadata(torrent.sub_category)
+            torrent.main_category, [get_sub_category_metadata(torrent.sub_category)]
         ),
-
-        # 'main_category': {
-        #     # 'id': torrent.main_category.id,
-        #     'id_as_string': torrent.main_category.id_as_string,
-        #     'name': torrent.main_category.name,
-        #     'sub_category': {
-        #         # 'id': torrent.sub_category.id,
-        #         'id_as_string': torrent.sub_category.id_as_string,
-        #         'name': torrent.sub_category.name,
-        #     }
-        # },
 
         'information': torrent.information,
         'description': torrent.description,

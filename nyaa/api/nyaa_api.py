@@ -250,36 +250,8 @@ def v3_api_torrent_info(id):
         submitter = torrent.user.username
 
     # Create a response dict with relevant data
-    torrent_metadata = {
-        'submitter': submitter,
-        'url': flask.url_for('torrents.view', torrent_id=torrent.id, _external=True),
-        'id': torrent.id,
-        'name': torrent.display_name,
-
-        'creation_date': torrent.created_time.strftime('%Y-%m-%d %H:%M UTC'),
-        'hash_b32': torrent.info_hash_as_b32,  # as used in magnet uri
-        'hash_hex': torrent.info_hash_as_hex,  # .hex(), #as shown in torrent client
-        'magnet': torrent.magnet_uri,
-
-        'main_category': torrent.main_category.name,
-        'main_category_id': torrent.main_category.id,
-        'sub_category': torrent.sub_category.name,
-        'sub_category_id': torrent.sub_category.id,
-
-        'information': torrent.information,
-        'description': torrent.description,
-        'stats': {
-            'seeders': torrent.stats.seed_count,
-            'leechers': torrent.stats.leech_count,
-            'downloads': torrent.stats.download_count
-        },
-        'filesize': torrent.filesize,
-
-        'is_trusted': torrent.trusted,
-        'is_complete': torrent.complete,
-        'is_remake': torrent.remake
-    }
-
+    # TODO add submitter
+    torrent_metadata = metadata_science.get_torrent_metadata(torrent)
     return flask.jsonify(torrent_metadata), 200
 
 ##############################################
