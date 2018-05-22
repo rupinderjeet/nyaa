@@ -1,5 +1,6 @@
 import functools
 import json
+import math
 import re
 
 import flask
@@ -8,7 +9,8 @@ from sqlalchemy import desc
 from nyaa import models
 from nyaa.api import metadata_science
 from nyaa.extensions import db
-from nyaa.search import DEFAULT_PER_PAGE, search_db
+from nyaa.search import (DEFAULT_MAX_SEARCH_RESULT, DEFAULT_PER_PAGE,
+                         search_db, search_elastic)
 from nyaa.utils import chain_get
 
 app = flask.current_app
@@ -60,6 +62,13 @@ PAGE_NUMBER_PATTERN = '^[0-9]+$'
 INFO_HASH_PATTERN = '^[0-9a-fA-F]{40}$'  # INFO_HASH as string
 
 MAX_PAGE_LIMIT = 1000
+
+
+@api_v3_blueprint.route('/', methods=['GET'])
+# @basic_auth_user
+# @api_require_user
+def v3_api_home():
+    return flask.jsonify(metadata_science.get_api_metadata()), 200
 
 ##############################################
 #              Categories
@@ -140,23 +149,24 @@ def v3_api_browse():
     if req_args.get('page') == 'rss':
         return error('RSS is not allowed from this API.')
 
-    search_term = chain_get(req_args, 'q')
-    quality_filter = chain_get(req_args, 'f')
-    category = chain_get(req_args, 'c')
+    search_term = chain_get(req_args, 'q', 'term')
 
-    # Page Number
-    page_number = chain_get(req_args, 'p')
+    # sorting
+    sort_key = chain_get(req_args, 's', 'sort_by')
+    sort_order = chain_get(req_args, 'o', 'sort_order')
+
+    category = chain_get(req_args, 'c', 'cats')
+    quality_filter = chain_get(req_args, 'f', 'filter')
+
+    # torrents by a user
+    user_name = chain_get(req_args, 'u', 'user')
+
+    # page number
+    page_number = chain_get(req_args, 'p', 'page')
     try:
         page_number = max(1, int(page_number))
     except (ValueError, TypeError):
         page_number = 1
-
-    # Sorting
-    sort_key = chain_get(req_args, 's', 'sort_by')
-    sort_order = chain_get(req_args, 'o', 'sort_order')
-
-    # torrents by a user
-    user_name = req_args.get('u')
 
     # Check simply if the key exists
     use_magnet_links = 'magnets' in req_args or 'm' in req_args
@@ -170,9 +180,12 @@ def v3_api_browse():
             flask.abort(404)
         user_id = user.id
 
+    # TODO: understand this first
+    # special_results = {} @see views/main.py
+
     query_args = {
-        'term': search_term or '',
         'user': user_id,
+        # 'term': search_term or '',
         'sort': sort_key or 'id',
         'order': sort_order or 'desc',
         'category': category or '0_0',
@@ -183,6 +196,7 @@ def v3_api_browse():
 
     """
     # not needed I think (for now)
+    # we're not supporting admin featu
 
     if flask.g.user:
         query_args['logged_in_user'] = flask.g.user
@@ -190,7 +204,36 @@ def v3_api_browse():
             query_args['admin'] = True
     """
 
-    # TODO : use as legacy_fallback | shift to ES
+    # If searching, we get results from elastic search
+    use_elastic = app.config.get('USE_ELASTIC_SEARCH')
+
+    if use_elastic and search_term:
+        query_args['term'] = search_term
+
+        max_search_results = app.config.get('ES_MAX_SEARCH_RESULT', DEFAULT_MAX_SEARCH_RESULT)
+
+        # Only allow up to (max_search_results / page) pages
+        max_page = min(query_args['page'], int(math.ceil(max_search_results / results_per_page)))
+
+        query_args['page'] = max_page
+        query_args['max_search_results'] = max_search_results
+
+        query_results = search_elastic(**query_args)
+        json_result = json.loads(json.dumps(query_results.to_dict()))
+
+        result = metadata_science.get_es_torrent_list_metadata(json_result, query_args)
+        return flask.jsonify(result), 200
+
+    else:
+        query_args['term'] = search_term or ''
+        return v3_api_browse_legacy(query_args)
+
+def v3_api_browse_legacy(query_args):
+
+    """
+    Used only if elastic search is disabled.
+    """
+
     query = search_db(**query_args)
     # change p= argument to whatever you change page_parameter to or pagination breaks
 
