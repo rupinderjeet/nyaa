@@ -7,9 +7,8 @@ to make thousands of mistakes. Please guide me. I hope this will be useful for n
 Files I am working on (or the ones I have changed) are:
 
     /nyaa/__init__.py
-    /nyaa/api/__init__.py
-    /nyaa/api/nyaa_api.py
-
+    /nyaa/api/*
+    
 #kirusurai
 
 ---------------------
