@@ -1,14 +1,20 @@
+from datetime import timezone
+
 """
     This file keeps response structure in here
     so that, we can change it here and reflect it everywhere else \
         where same model is used
 """
-from nyaa import models
+
+###############################################################
+########  LIST OF API-ENDPOINTS                         #######
+###############################################################
 
 def get_api_metadata () :
 
     api_metadata = {
         "status" : "active",
+        "base" : "/api/v3/",
         "end_points" : [
             "categories/",
             "browse/",
@@ -22,13 +28,17 @@ def get_api_metadata () :
 
     return api_metadata
 
+###############################################################
+########  LIST OF CATEGORIES                            #######
+###############################################################
+
 def get_category_metadata(category, sub_categories=None) :
 
     if not category:
         return None
 
     category_metadata = {
-        # 'id': category.id,
+        'id': category.id,
         'name': category.name,
         'id_as_string': category.id_as_string,
     }
@@ -38,26 +48,124 @@ def get_category_metadata(category, sub_categories=None) :
 
     return category_metadata
 
-def get_torrent_metadata(torrent, submitter=None, category_as_model=False) :
+###############################################################
+########  LIST OF COMMENTS                              #######
+###############################################################
+
+def get_comment_metadata(comment, comment_author) :
+
+    if not comment:
+        return None
+
+    comment_metadata = {
+        'id': comment.id,
+        'text': comment.text,
+        'created_time': comment.created_time
+    }
+
+    if comment.edited_time:
+        comment_metadata['edited_at'] = comment.edited_time
+
+    if comment_author:
+        comment_metadata['author_id'] = comment_author.id
+        comment_metadata['author_name'] = comment_author.username
+
+    return comment_metadata
+
+###############################################################
+########  BROWSE TORRENTS: Used for                     #######
+########     1. Single Torrent                          #######
+########     2. Torrent List with Search Term (DB)      #######
+########     3. Torrent List without Search Term (ES)   #######
+###############################################################
+
+def get_torrent_metadata (torrent, submitter=None, from_es=False) :
+
+    """
+        For consistency between es and db results
+
+        And, the presence of each key in returned dict is based on its availability.
+
+        `created_time` is a pain for me:
+            db time format is: Fri, 02 Feb 2018 19:38:09 GMT
+            es time format is: 2018-02-02T19:37:43
+
+        TODO: must convert them to epoch(posix) like timestamp
+        TODO: add download url
+    """
 
     if not torrent:
         return None
 
-    torrent_metadata = {
-        # 'hash_b32': torrent.info_hash_as_b32,  # as used in magnet uri
-        # 'hash_hex': torrent.info_hash_as_hex,  # .hex(), #as shown in torrent client
+    torrent_metadata = {}
 
-        # 'url': '',  # TODO download url, later
-    }
+    if from_es:
+
+        # User searched for a term, and our es got triggered
+
+        # this means `torrent` is already a dict
+        # I pushed extra_information from ES to new position 'es_extra', but haven't included it
+        # for consistency with non-es results.
+
+        # es has abnormal timestamp, as does db(2018-02-02T19:37:43) convert to seconds since epoch
+        # I think this might break at some time, TODO: heal this!
+        # nice_datetime = datetime.strptime(torrent['created_time'], "%Y-%m-%dT%H:%M:%S")
+        # supposed_timestamp = (nice_datetime - datetime(1970, 1, 1)).total_seconds()
+        # torrent_metadata['created_time'] = 'hello' # str(supposed_timestamp).rstrip('.0')
+
+        stats = {}
+
+        if 'seed_count' in torrent:
+            stats['seed_count'] = torrent.pop('seed_count')
+
+        if 'leech_count' in torrent:
+            stats['leech_count'] = torrent.pop('leech_count')
+
+        if 'download_count' in torrent:
+            stats['download_count'] = torrent.pop('download_count')
+
+        torrent['stats'] = stats
+
+        es_extra = {}
+
+        if 'anonymous' in torrent:
+            es_extra['anonymous'] = torrent.pop('anonymous')
+
+        if 'hidden' in torrent:
+            es_extra['hidden'] = torrent.pop('hidden')
+
+        if 'deleted' in torrent:
+            es_extra['deleted'] = torrent.pop('deleted')
+
+        if 'comment_count' in torrent:
+            es_extra['comment_count'] = torrent.pop('comment_count')
+
+        if 'has_torrent' in torrent:
+            es_extra['has_torrent'] = torrent.pop('has_torrent')
+
+        if 'hello' in torrent:
+            es_extra['hello'] = torrent.pop('hello')
+
+        # torrent['es_extra'] = es_extra
+
+        return torrent
+
+
+    # User is not using a search term, most likely viewing some category or latest torrents
+    # torrent is a model
+    # this means: we will have `magnet_uti`, `information` and `description` keys additionally
 
     if hasattr(torrent, 'id'):
         torrent_metadata['id'] = torrent.id
 
     if hasattr(torrent, 'display_name'):
-        torrent_metadata['name'] = torrent.display_name
+        torrent_metadata['display_name'] = torrent.display_name
 
     if hasattr(torrent, 'created_time'):
-        torrent_metadata['created_time'] = torrent.created_time
+
+        # I think this might break at some time, TODO: heal this!
+        timestamp = torrent.created_time.replace(tzinfo=timezone.utc).timestamp()
+        torrent_metadata['created_time'] = str(timestamp).rstrip('.0')
 
     if hasattr(torrent, 'information'):
         torrent_metadata['information'] = torrent.information
@@ -65,57 +173,75 @@ def get_torrent_metadata(torrent, submitter=None, category_as_model=False) :
     if hasattr(torrent, 'description'):
         torrent_metadata['description'] = torrent.description
 
+    if hasattr(torrent, 'info_hash'):
+        torrent_metadata['info_hash'] = torrent.info_hash_as_hex
+
     if hasattr(torrent, 'filesize'):
         torrent_metadata['filesize'] = torrent.filesize
 
-    # if hasattr(torrent, 'info_hash'):
-    #     torrent_metadata['info_hash'] = torrent.info_hash
-
     if hasattr(torrent, 'magnet_uri'):
-        torrent_metadata['magnet'] = torrent.magnet_uri
+        torrent_metadata['magnet_uri'] = torrent.magnet_uri
 
     if hasattr(torrent, 'trusted'):
-        torrent_metadata['is_trusted'] = torrent.trusted
+        torrent_metadata['trusted'] = torrent.trusted
 
     if hasattr(torrent, 'complete'):
-        torrent_metadata['is_complete'] = torrent.complete
+        torrent_metadata['complete'] = torrent.complete
 
     if hasattr(torrent, 'remake'):
-        torrent_metadata['is_remake'] = torrent.remake
+        torrent_metadata['remake'] = torrent.remake
 
-    if submitter:
-        torrent_metadata['submitter'] = {
-            'id': submitter.id,
-            'name': submitter.name
-        }
-
-    # if category_as_model:
-    #     torrent_metadata['main_category'] = get_category_metadata(
-    #         torrent.main_category, [get_category_metadata(torrent.sub_category)]
-    #     )
-    # else:
-    #     torrent_metadata['main_category'] = torrent.main_category.name
-    #     torrent_metadata['main_category_id'] = torrent.main_category.id
-    #     torrent_metadata['sub_category'] = torrent.sub_category.name
-    #     torrent_metadata['sub_category_id'] = torrent.sub_category.id
-
+    # torrent stats
+    stats = {}
     if hasattr(torrent, 'stats') and torrent.stats:
-        torrent_metadata['stats'] = {
-            'seeders': torrent.stats.seed_count,
-            'leechers': torrent.stats.leech_count,
-            'downloads': torrent.stats.download_count
-        }
+
+        if hasattr(torrent.stats, 'seed_count'):
+            stats['seed_count'] = torrent.stats.seed_count
+
+        if hasattr(torrent.stats, 'leech_count'):
+            stats['leech_count'] = torrent.stats.leech_count
+
+        if hasattr(torrent.stats, 'download_count'):
+            stats['download_count'] = torrent.stats.download_count
+
+        torrent_metadata['stats'] = stats
+
+    # torrent : submitter
+    if submitter:
+
+        if hasattr(submitter, 'id'):
+            torrent_metadata['uploader_id'] = submitter.id
+
+        if hasattr(submitter, 'name'):
+            torrent_metadata['uploader_name'] = submitter.name
+
+    # torrent : main category
+    if hasattr(torrent, 'main_category') and torrent.main_category:
+
+        if hasattr(torrent.main_category, 'id'):
+            torrent_metadata['main_category_id'] = torrent.main_category.id
+
+        ''' available, but not required. Category list should be fetched only once. '''
+        # if hasattr(torrent.main_category, 'name'):
+        #     torrent_metadata['main_category_name'] = torrent.main_category.name
+
+    # torrent : sub category
+    if hasattr(torrent, 'sub_category') and torrent.sub_category:
+
+        if hasattr(torrent.sub_category, 'id'):
+            torrent_metadata['sub_category_id'] = torrent.sub_category.id
+
+        ''' available, but not required. Category list should be fetched only once. '''
+        # if hasattr(torrent.sub_category, 'name'):
+        #     torrent_metadata['sub_category_name'] = torrent.sub_category.name
 
     return torrent_metadata
 
-def get_torrent_list_metadata(torrents, args) :
-
-    return {
-        'torrents': torrents,
-        'args': args
-    }
-
 def get_es_torrent_list_metadata(es_json, args) :
+
+    """
+        FROM ELASTIC SEARCH
+    """
 
     torrents = []
 
@@ -126,55 +252,15 @@ def get_es_torrent_list_metadata(es_json, args) :
             hit_source = hit['_source']
 
             if hit_source:
+                torrents.append(get_torrent_metadata(hit_source, None, True))
 
-                torrents.append(hit["_source"])
+    return get_torrent_list_metadata(torrents, args)
 
-                # no magnet
-                # no information
-                # no description
+def get_torrent_list_metadata(torrents, args) :
 
-                torrent = models.Torrent
-                torrent.id = hit_source['id']
-                torrent.display_name = hit_source['display_name']
-                torrent.created_time = hit_source['created_time']
-                torrent.info_hash = hit_source['info_hash']
-
-                torrent.filesize = hit_source['filesize']
-                torrent.stats.seed_count = hit_source['seed_count']
-                torrent.stats.leech_count = hit_source['leech_count']
-                torrent.stats.download_count = hit_source['download_count']
-                torrent.stats.downloads = hit_source['download_count']
-
-                torrent.trusted = hit_source['trusted']
-                torrent.complete = hit_source['complete']
-                torrent.remake = hit_source['remake']
-
-                torrents.append({})
-                # torrents.append(get_torrent_metadata(torrent))
+    """ return torrents and its args """
 
     return {
         'torrents': torrents,
         'args': args
     }
-
-def get_comment_metadata(comment, comment_author) :
-
-    if not comment:
-        return None
-
-    comment_metadata = {
-        'id': comment.id,
-        'text': comment.text,
-        'created_at': comment.created_time
-    }
-
-    if comment.edited_time:
-        comment_metadata['edited_at'] = comment.edited_time
-
-    if comment_author:
-        comment_metadata['author'] = {
-            'id': comment_author.id,
-            'name': comment_author.username
-        }
-
-    return comment_metadata

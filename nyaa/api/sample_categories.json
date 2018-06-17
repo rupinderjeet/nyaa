@@ -1,103 +1,126 @@
 [
     {
+        "id": 1,
         "id_as_string": "1_0",
         "name": "Anime",
         "sub_categories": [
             {
+                "id": 1,
                 "id_as_string": "1_1",
                 "name": "Anime Music Video"
             },
             {
+                "id": 2,
                 "id_as_string": "1_2",
                 "name": "English-translated"
             },
             {
+                "id": 3,
                 "id_as_string": "1_3",
                 "name": "Non-English-translated"
             },
             {
+                "id": 4,
                 "id_as_string": "1_4",
                 "name": "Raw"
             }
         ]
     },
     {
+        "id": 2,
         "id_as_string": "2_0",
         "name": "Audio",
         "sub_categories": [
             {
+                "id": 1,
                 "id_as_string": "2_1",
                 "name": "Lossless"
             },
             {
+                "id": 2,
                 "id_as_string": "2_2",
                 "name": "Lossy"
             }
         ]
     },
     {
+        "id": 3,
         "id_as_string": "3_0",
         "name": "Literature",
         "sub_categories": [
             {
+                "id": 1,
                 "id_as_string": "3_1",
                 "name": "English-translated"
             },
             {
+                "id": 2,
                 "id_as_string": "3_2",
                 "name": "Non-English-translated"
             },
             {
+                "id": 3,
                 "id_as_string": "3_3",
                 "name": "Raw"
             }
         ]
     },
     {
+        "id": 4,
         "id_as_string": "4_0",
         "name": "Live Action",
         "sub_categories": [
             {
+                "id": 1,
                 "id_as_string": "4_1",
                 "name": "English-translated"
             },
             {
+                "id": 2,
                 "id_as_string": "4_2",
                 "name": "Idol/Promotional Video"
             },
             {
+                "id": 3,
                 "id_as_string": "4_3",
                 "name": "Non-English-translated"
             },
             {
+                "id": 4,
                 "id_as_string": "4_4",
                 "name": "Raw"
             }
         ]
     },
     {
+        "id": 5,
         "id_as_string": "5_0",
         "name": "Pictures",
         "sub_categories": [
             {
+                "id": 1,
                 "id_as_string": "5_1",
                 "name": "Graphics"
             },
             {
+                "id": 2,
                 "id_as_string": "5_2",
                 "name": "Photos"
             }
         ]
     },
     {
+        "id": 6,
         "id_as_string": "6_0",
         "name": "Software",
         "sub_categories": [
             {
+                "id": 1,
                 "id_as_string": "6_1",
                 "name": "Applications"
             },
             {
+                "id": 2,
                 "id_as_string": "6_2",
                 "name": "Games"
             }

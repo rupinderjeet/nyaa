@@ -62,17 +62,14 @@ PAGE_NUMBER_PATTERN = '^[0-9]+$'
 INFO_HASH_PATTERN = '^[0-9a-fA-F]{40}$'  # INFO_HASH as string
 
 MAX_PAGE_LIMIT = 1000
-
+TORRENTS_PER_PAGE = 40
+COMMENTS_PER_PAGE = 3
 
 @api_v3_blueprint.route('/', methods=['GET'])
 # @basic_auth_user
 # @api_require_user
 def v3_api_home():
     return flask.jsonify(metadata_science.get_api_metadata()), 200
-
-##############################################
-#              Categories
-###############################################
 
 @api_v3_blueprint.route('/categories/', methods=['GET'])
 # @basic_auth_user
@@ -112,13 +109,6 @@ def v3_api_categories():
         categories.append(main_category_metadata)
 
     return flask.jsonify(categories), 200
-
-
-##############################################
-#              Browse Torrents
-###############################################
-
-TORRENTS_PER_PAGE = 40
 
 @api_v3_blueprint.route('/browse/', methods=['GET'])
 # @basic_auth_user
@@ -196,7 +186,7 @@ def v3_api_browse():
 
     """
     # not needed I think (for now)
-    # we're not supporting admin featu
+    # we're not supporting admin features yet
 
     if flask.g.user:
         query_args['logged_in_user'] = flask.g.user
@@ -249,10 +239,6 @@ def v3_api_browse_legacy(query_args):
     result = metadata_science.get_torrent_list_metadata(torrents, query_args)
     return flask.jsonify(result), 200
 
-##############################################
-#              Torrent Info
-###############################################
-
 @api_v3_blueprint.route('/info/<id>/', methods=['GET'])
 # @basic_auth_user
 # @api_require_user
@@ -262,7 +248,6 @@ def v3_api_torrent_info(id):
     Used to fetch information about a torrent
 
     :param id: ID of the torrent whose information is required
-    :param category_as_model: should return category as model or plain_data, default false
     :return: found information as JSON
 
     see sample_torrent_info.json
@@ -270,9 +255,6 @@ def v3_api_torrent_info(id):
     TODO: match by torrent_hash
     TODO: improve error messages
     """
-
-    # enable if has any value assigned to it, lazy for bool-cast
-    category_as_model = flask.request.args.get('category_as_model')
 
     id_match = re.match(ID_PATTERN, id)
     if not id_match:
@@ -298,14 +280,9 @@ def v3_api_torrent_info(id):
         submitter = torrent.user
 
     # Create a response dict with relevant data
-    torrent_metadata = metadata_science.get_torrent_metadata(torrent, submitter, category_as_model)
+    torrent_metadata = metadata_science.get_torrent_metadata(torrent, submitter)
     return flask.jsonify(torrent_metadata), 200
 
-##############################################
-#              Torrent Comments
-###############################################
-
-COMMENTS_PER_PAGE = 3
 @api_v3_blueprint.route('/info/<id>/comments/', methods=['GET'])
 @api_v3_blueprint.route('/info/<id>/comments/<page>/', methods=['GET'])
 # @basic_auth_user
@@ -376,11 +353,6 @@ def v3_api_torrent_comments(id, page=-1):
 
     return flask.jsonify(comments), 200
 
-
-##############################################
-#              Torrent : Add Comments
-###############################################
-
 @api_v3_blueprint.route('/info/<id>/comments/add', methods=['POST'])
 # @basic_auth_user
 # @api_require_user
@@ -416,9 +388,10 @@ def v3_api_torrent_add_comment (id):
     if not comment_text:
         return error("Can't add empty comment.", 403)
 
+    # TODO: trying to tell me something about 'Unexpected Arguments'?
     comment = models.Comment(
         torrent_id=torrent.id,
-        user_id=1, # TODO change to flask.g.user.id
+        user_id=1, # TODO change to viewer.id (or flask.g.user.id)
         text=comment_text
     )
 
@@ -435,10 +408,6 @@ def v3_api_torrent_add_comment (id):
 
     comment_metadata = metadata_science.get_comment_metadata(comment, comment_author)
     return flask.jsonify(comment_metadata), 201
-
-##############################################
-#              Torrent Files
-###############################################
 
 @api_v3_blueprint.route('/info/<id>/files/', methods=['GET'])
 # @basic_auth_user

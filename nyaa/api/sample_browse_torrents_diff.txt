@@ -1,0 +1,16 @@
+This file shows how an ElasticSearch result differs from a Database result
+
+    => Conflicting keys in ElasticSearch Result
+            "created_time": "2018-02-02T19:38:09",
+
+
+    => Conflicting keys in Database Result
+
+            "created_time": "1517600289",
+            "description": "",
+            "information": "",
+            "magnet_uri": "magnet:?xt=urn:btih:blabla"
+
+
+    => `uploader_id` & `uploader_id` keys are included only if available
+    => ES and DB gives you `uploader_id`, but `uploader_name` is only returned from db
