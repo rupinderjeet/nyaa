@@ -2,11 +2,11 @@ import flask
 
 from nyaa import models
 from nyaa.extensions import db
-from nyaa.api import metadata_science
-from nyaa.api.nyaa_api import error
+from nyaa.api import metadata_science, API_URL_PREFIX
+from nyaa.api.base_api import error
 
 app = flask.current_app
-categories_api_blueprint = flask.Blueprint('v3-categories', __name__, url_prefix='/api/v3')
+categories_api_blueprint = flask.Blueprint('v3-categories', __name__, url_prefix=API_URL_PREFIX)
 
 @categories_api_blueprint.route('/categories/', methods=['GET'])
 # @basic_auth_user

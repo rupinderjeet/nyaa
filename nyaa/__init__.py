@@ -5,9 +5,11 @@ import string
 import flask
 from flask_assets import Bundle  # noqa F401
 
-from nyaa.api import comments_api, torrents_api, categories_api
 from nyaa.api_handler import api_blueprint
-from nyaa.api.nyaa_api import api_v3_blueprint
+from nyaa.api.base_api import base_api_blueprint
+from nyaa.api.categories_api import categories_api_blueprint
+from nyaa.api.torrents_api import torrents_api_blueprint
+from nyaa.api.comments_api import comments_api_blueprint
 from nyaa.extensions import assets, db, fix_paginate, toolbar
 from nyaa.template_utils import bp as template_utils_bp
 from nyaa.utils import random_string
@@ -90,10 +92,10 @@ def create_app(config):
     # Blueprints
     app.register_blueprint(template_utils_bp)
     app.register_blueprint(api_blueprint)
-    app.register_blueprint(api_v3_blueprint)
-    app.register_blueprint(categories_api.categories_api_blueprint)
-    app.register_blueprint(torrents_api.torrents_api_blueprint)
-    app.register_blueprint(comments_api.comments_api_blueprint)
+    app.register_blueprint(base_api_blueprint)
+    app.register_blueprint(categories_api_blueprint)
+    app.register_blueprint(torrents_api_blueprint)
+    app.register_blueprint(comments_api_blueprint)
     register_views(app)
 
     return app

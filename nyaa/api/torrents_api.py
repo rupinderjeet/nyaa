@@ -5,14 +5,15 @@ import re
 import flask
 
 from nyaa import models
-from nyaa.api import metadata_science
+from nyaa.api import metadata_science, API_URL_PREFIX, ID_PATTERN
 from nyaa.search import (DEFAULT_MAX_SEARCH_RESULT, DEFAULT_PER_PAGE,
                          search_db, search_elastic)
 from nyaa.utils import chain_get
-from nyaa.api.nyaa_api import error, ID_PATTERN
+from nyaa.api.base_api import error
 
 app = flask.current_app
-torrents_api_blueprint = flask.Blueprint('v3-torrents', __name__, url_prefix='/api/v3')
+torrents_api_blueprint = flask.Blueprint('v3-torrents', __name__, url_prefix=API_URL_PREFIX)
+
 
 @torrents_api_blueprint.route('/browse/', methods=['GET'])
 # @basic_auth_user
@@ -109,6 +110,7 @@ def browse():
         query_args['term'] = search_term or ''
         return browse_db(query_args)
 
+
 @torrents_api_blueprint.route('/info/<torrent_id>/', methods=['GET'])
 # @basic_auth_user
 # @api_require_user
@@ -152,6 +154,48 @@ def get_torrent_info(torrent_id):
     # Create a response dict with relevant data
     torrent_metadata = metadata_science.get_torrent_metadata(torrent, submitter)
     return flask.jsonify(torrent_metadata), 200
+
+
+@torrents_api_blueprint.route('/info/<torrent_id>/files/', methods=['GET'])
+# @basic_auth_user
+# @api_require_user
+def v3_api_torrent_files(torrent_id):
+
+    """
+    Used to fetch list of files in a torrent
+
+    -- pagination not required (not supported too, I think)
+
+    :param torrent_id: ID of the torrent for which you want to get list of files
+    :return: found list of files in Json stacked as a folder-structure
+
+    see sample_files.json
+    """
+
+    id_match = re.match(ID_PATTERN, torrent_id)
+    if not id_match:
+        return error('Torrent id was not a valid id.')
+
+    # check if this torrent is deleted
+    viewer = flask.g.user
+    torrent = models.Torrent.by_id(torrent_id)
+    if not torrent:
+        return error('Query was not a valid id or hash.')
+
+    if torrent.deleted and not (viewer and viewer.is_superadmin):
+        # this torrent is deleted and viewer is not an admin
+        return error('Query was not a valid id or hash.')
+
+    # TODO: maybe use direct model
+    # files_result = models.TorrentFilelist.query.filter_by(torrent_id=id)
+    file_list = torrent.filelist # does the overuse cause memory/performance issues?
+    if file_list:
+
+        decoded_file_list = file_list.filelist_blob.decode('utf-8')
+        return flask.jsonify(json.loads(decoded_file_list)), 200
+    else:
+        return error('Unable to get file list for this torrent.')
+
 
 ###########################################
 

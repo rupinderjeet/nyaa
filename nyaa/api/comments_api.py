@@ -4,12 +4,13 @@ import flask
 from sqlalchemy import desc
 
 from nyaa import models
-from nyaa.api import metadata_science
-from nyaa.api.nyaa_api import ID_PATTERN, error, PAGE_NUMBER_PATTERN, MAX_PAGE_LIMIT, COMMENTS_PER_PAGE
+from nyaa.api import metadata_science, API_URL_PREFIX, ID_PATTERN, PAGE_NUMBER_PATTERN, MAX_PAGE_LIMIT, COMMENTS_PER_PAGE
+from nyaa.api.base_api import error
 from nyaa.extensions import db
 
 app = flask.current_app
-comments_api_blueprint = flask.Blueprint('v3-comments', __name__, url_prefix='/api/v3')
+comments_api_blueprint = flask.Blueprint('v3-comments', __name__, url_prefix=API_URL_PREFIX)
+
 
 @comments_api_blueprint.route('/info/<torrent_id>/comments/', methods=['GET'])
 @comments_api_blueprint.route('/info/<torrent_id>/comments/<page>/', methods=['GET'])
@@ -76,6 +77,7 @@ def get_comments(torrent_id, page=-1):
 
     return flask.jsonify(comments), 200
 
+
 @comments_api_blueprint.route('/info/<torrent_id>/comment/add', methods=['POST'])
 # @basic_auth_user
 # @api_require_user
@@ -122,6 +124,7 @@ def add_comment (torrent_id):
     db.session.commit()
 
     return flask.jsonify(metadata_science.get_comment_metadata(comment)), 201
+
 
 @comments_api_blueprint.route('/info/<torrent_id>/comment/edit', methods=['POST'])
 @comments_api_blueprint.route('/info/<torrent_id>/comment/edit/<comment_id>', methods=['POST'])

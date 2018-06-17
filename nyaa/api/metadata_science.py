@@ -13,7 +13,7 @@ from datetime import timezone
 ########  LIST OF API-ENDPOINTS                         #######
 ###############################################################
 
-def get_api_metadata () :
+def get_endpoints_metadata () :
 
     api_metadata = {
         "status" : "active",
