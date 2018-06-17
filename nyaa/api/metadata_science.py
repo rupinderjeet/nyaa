@@ -4,6 +4,9 @@ from datetime import timezone
     This file keeps response structure in here
     so that, we can change it here and reflect it everywhere else \
         where same model is used
+        
+    TODO: Maybe now I can split this in respective individual classes.
+    For e.g. metadata code for comments should be in comments_api
 """
 
 ###############################################################
@@ -49,10 +52,10 @@ def get_category_metadata(category, sub_categories=None) :
     return category_metadata
 
 ###############################################################
-########  LIST OF COMMENTS                              #######
+########  GET COMMENT                                   #######
 ###############################################################
 
-def get_comment_metadata(comment, comment_author) :
+def get_comment_metadata(comment) :
 
     if not comment:
         return None
@@ -60,12 +63,13 @@ def get_comment_metadata(comment, comment_author) :
     comment_metadata = {
         'id': comment.id,
         'text': comment.text,
-        'created_time': comment.created_time
+        'created_time': without_dot_zero(comment.created_utc_timestamp)
     }
 
     if comment.edited_time:
-        comment_metadata['edited_at'] = comment.edited_time
+        comment_metadata['edited_time'] = without_dot_zero(comment.edited_utc_timestamp)
 
+    comment_author = comment.user
     if comment_author:
         comment_metadata['author_id'] = comment_author.id
         comment_metadata['author_name'] = comment_author.username
@@ -264,3 +268,8 @@ def get_torrent_list_metadata(torrents, args) :
         'torrents': torrents,
         'args': args
     }
+
+# remove trailing .0
+def without_dot_zero(target):
+    return str(target).rstrip('.0')
+
